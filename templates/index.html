@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Power and Temperature over Time</h2>
+    <canvas id="sensorChart" width="600" height="300"></canvas>
 
+    <script>
+        let chart; // Global chart instance
+
+        async function fetchSensorData() {
+            const response = await fetch('/data');
+            return await response.json();
+        }
+
+        async function updateChart() {
+            const data = await fetchSensorData();
+
+            const labels = data.map(d => d.timestamp);
+            const powerData = data.map(d => d.power);
+            const tempData = data.map(d => d.temperature);
+
+            // If the chart exists, update its data
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = powerData;
+                chart.data.datasets[1].data = tempData;
+                chart.update();
+            } else {
+                // Create chart on first load
+                const ctx = document.getElementById('sensorChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Power (W)',
+                                data: powerData,
+                                borderColor: 'blue',
+                                fill: false
+                            },
+                            {
+                                label: 'Temperature (°C)',
+                                data: tempData,
+                                borderColor: 'red',
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        animation: false,
+                        scales: {
+                            x: {
+                                ticks: { autoSkip: true, maxTicksLimit: 10 }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initial load
+        updateChart();
+
+        // Auto-refresh every 5 seconds
+        setInterval(updateChart, 5000);
+    </script>
+</body>
+</html>
